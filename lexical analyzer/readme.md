@@ -21,3 +21,11 @@ make
 ```sh
 ./lex [--stop-on-error|s] [--compact|c] <input_file> [-o|--output <output_file>]
 ```
+
+<!-- flags explanation -->
+
+### Flags
+
+- `--stop-on-error` or `-s` : Stop the program on the first error encountered
+- `--compact` or `-c` : Print the output in compact form
+- `--output` or `-o` : Specify the output file
