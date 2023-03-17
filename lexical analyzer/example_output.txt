@@ -1,0 +1,72 @@
+ID: x#3 
+{PLUS} 
+KEYWORD: {int} 
+KEYWORD: {main} 
+{LPAREN} 
+{RPAREN} 
+{LBRACE} 
+KEYWORD: {int} 
+ID: e13 
+{ASSIGN} 
+NUM: 130 
+{SEMICOLON} 
+KEYWORD: {int} 
+NUM: 12 
+ID: ab 
+{ASSIGN} 
+NUM: 20 
+{SEMICOLON} 
+KEYWORD: {int} 
+ID: x$3 
+{ASSIGN} 
+NUM: 130 
+{SEMICOLON} 
+KEYWORD: {while} 
+{LPAREN} 
+ID: x$3 
+{LT} 
+NUM: 3 
+{RPAREN} 
+{LBRACE} 
+KEYWORD: {int} 
+ID: x 
+{ASSIGN} 
+NUM: 0 
+{SEMICOLON} 
+KEYWORD: {if} 
+{LPAREN} 
+ID: x 
+{EQ} 
+NUM: 0 
+{RPAREN} 
+{LBRACE} 
+ID: x 
+{PLUS} 
+{ASSIGN} 
+NUM: 1 
+{SEMICOLON} 
+{RBRACE} 
+KEYWORD: {else} 
+{LBRACE} 
+ID: x$3 
+{PLUS} 
+{ASSIGN} 
+NUM: 4 
+{SEMICOLON} 
+{RBRACE} 
+{RBRACE} 
+ID: e 
+
+lex.l:20:7: error: Invalid character #
+{MULT} 
+{ASSIGN} 
+NUM: 1 
+{SEMICOLON} 
+
+lex.l:26:37: error: Nested comment /*
+{MULT} 
+{DIV} 
+{RBRACE} 
+
+lex.l:29:21: error: Unclosed comment 
+
