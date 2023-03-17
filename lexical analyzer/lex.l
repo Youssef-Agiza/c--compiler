@@ -1,4 +1,5 @@
 %{
+#include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
 #include<stdarg.h>
@@ -196,7 +197,8 @@ int main(int argc, char *argv[])
     sync_stdout_stderr();
 
     int flags = 0;
-    for (int i = 1; i < argc; i++)
+    int i = 1;
+    for (i = 1; i < argc; i++)
     {
         if (strcmp(argv[i], "--stop-on-error") == 0 || strcmp(argv[i], "-s") == 0)
         {
@@ -218,7 +220,8 @@ int main(int argc, char *argv[])
                 freopen(argv[i], "w", stdout);
 
                 argc -= 2;
-                for (int j = i; j < argc; j++)
+                int j = i;
+                for (j = i; j < argc; j++)
                 {
                     argv[j] = argv[j + 2];
                 }
@@ -236,9 +239,9 @@ int main(int argc, char *argv[])
         return 1;
     }
 
-    if (strcmp)
-
-        for (int i = 1; i < argc; i++)
+    if (strcmp){
+        int i = 1;
+        for (i = 1; i < argc; i++)
         {
             FILE *file = fopen(argv[i], "r");
             if (!file)
@@ -250,6 +253,7 @@ int main(int argc, char *argv[])
             yylex();
             fclose(file);
         }
+    }
     printf("\n");
     return 0;
 }
