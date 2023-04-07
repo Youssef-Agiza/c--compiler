@@ -69,7 +69,7 @@ struct Token
 };
 
 Token *lookAheadToken;
-std::string foundToken;
+std::string expectedToken;
 
 void nextToken()
 {
@@ -81,16 +81,16 @@ bool isNext(std::string currentToken)
     return (lookAheadToken->txt == currentToken);
 }
 
-bool match(std::string currentToken)
+bool match(std::string _expectedToken)
 {
-    if (lookAheadToken->txt == currentToken)
+    if (lookAheadToken->txt == _expectedToken)
     {
         nextToken();
         return true;
     }
     else
     {
-        foundToken = currentToken;
+        expectedToken = _expectedToken;
         return false;
     }
 }
@@ -135,8 +135,8 @@ int main(int argc, const char *argv[])
     lookAheadToken = list;
     if (program() == false)
     {
-        std::cerr << "Syntax error line # " << lookAheadToken->lineNumber << ", expected token (" << lookAheadToken->txt << "), but got "
-                  << "(" << foundToken << ")";
+        std::cerr << "Syntax error line # " << lookAheadToken->lineNumber << ", expected token (" << expectedToken << "), but got "
+                  << "(" <<  lookAheadToken->txt << ")";
     }
 
     remove(intermediateFile);
@@ -145,9 +145,10 @@ int main(int argc, const char *argv[])
 
 bool program()
 {
-    return type_specifier() && match("main") && match(LPAREN) && declaration_list() && match(RPAREN) && match(LBRACE) && declaration_list() && statement_list() && match(RBRACE);
+    return type_specifier() && match("main") && match(LPAREN) && params() && match(RPAREN) && match(LBRACE) && declaration_list() && statement_list() && match(RBRACE);
 }
 
+using namespace std;
 bool declaration_list()
 {
     return declaration() &&
@@ -226,9 +227,14 @@ bool param_tail()
         return true;
 }
 
+bool func(){
+    cout<<"Hello World";
+    return true;
+}
+
 bool compound_stmt()
 {
-    return match(LBRACE) && statement_list() && match(RBRACE);
+    return match(LBRACE) && statement_list()&& match(RBRACE);
 }
 
 bool statement_list()
@@ -350,12 +356,15 @@ bool addop()
 {
     if (isNext(PLUS))
         return (match(PLUS));
-    if (isNext(MINUS))
+    else if (isNext(MINUS))
         return (match(MINUS));
+    else
+        return false;
 }
 
 bool term()
 {
+    cout<<"term: "<<lookAheadToken->txt<<endl;
     return factor() && term_tail();
 }
 

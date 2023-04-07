@@ -78,3 +78,8 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 | mulop                    | **\*** &#124; **/**                                                                                |
 | factor                   | **(** *expression* **)** &#124; *var* &#124; **NUM**                                               |
 | DELETED 27, 28, 29       | DELETED                                                                                            |
+
+
+### Modifications:
+1. program: replaced *declaration-list* with *params*.
+2. 
