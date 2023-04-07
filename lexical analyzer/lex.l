@@ -27,14 +27,14 @@ static void sync_stdout_stderr() {
 int line_number = 1;
 int char_position = 1;
 
-#define UPDATE_CHAR_POSITION char_position += yyleng; 
+#define UPDATE_CHAR_POSITION char_position += yyleng;
 
 
 /* Error handling */
 void print_red(const char *msg) {
     if(!output_to_file)
     printf(ANSI_COLOR_RED "%s" ANSI_COLOR_RESET, msg);
-    else 
+    else
     printf("%s" ,msg);
 
 }
@@ -66,12 +66,12 @@ void  print_token(const char *format , ...)
 
     if(!print_compact)
     printf("\n");
-    
+
 }
 void print_bold( const char* msg ){
     if(!output_to_file&&!print_compact)
     printf(ANSI_BOLD "%s" ANSI_COLOR_RESET, msg);
-    else 
+    else
     printf("%s",msg);
 
 }
@@ -128,7 +128,7 @@ invalid_num {digit}+(\.{digit}+)?((E|e)[\+|-]?[^digit])?
 
 ws [ \t]
 nested_comment "/*"
-unclosed_comment "/*"(.|\n)* 
+unclosed_comment "/*"(.|\n)*
 comment "/*"([^\*][^\\]|\n)*?"*/"
 
 %x COMMENT
@@ -182,7 +182,7 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 
 {invalid_num} {UPDATE_CHAR_POSITION; print_parsing_error("Invalid number"); }
 
-.       { 
+.       {
     UPDATE_CHAR_POSITION;
     print_parsing_error("Invalid character"); } /* Error handling */
 
