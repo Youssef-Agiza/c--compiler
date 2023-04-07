@@ -3,7 +3,7 @@ all:
 	@$(MAKE) semantic-analyzer --no-print-directory
 
 lexical-analyzer:
-	@$(MAKE) "./lexical analyzer" --no-print-directory
+	@cd "lexical analyzer" && $(MAKE) --no-print-directory
 
 semantic-analyzer:
-	@$(MAKE) "./semantic analyzer" --no-print-directory
+	@cd "semantic analyzer" && $(MAKE) --no-print-directory
