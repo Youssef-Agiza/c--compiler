@@ -36,7 +36,7 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 | factor              | **(** *expression* **)** &#124; *var* &#124; **NUM**                                                                |                    |
 | DELETED 27, 28, 29  | DELETED                                                                                                             |                    |
 
-## Modified Grammar
+## Modified Grammar(LL1)
 
 |          Symbol          |                                             Definition                                             |
 | ------------------------ | -------------------------------------------------------------------------------------------------- |
@@ -63,7 +63,7 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 | selection-statement-Tail | **empty** &#124; **else** *statement*                                                              |
 | iteration-statement      | **while** **(** *expression* **)** *statement*                                                     |
 | DELETED 17               | DELETED                                                                                            |
-| assignment-stmt          | *var* **=** *expression*                                                                           |
+| assignment-stmt          | *var* **=** *expression*;                                                                           |
 | var                      | **ID**  *var-Tail*                                                                                 |
 | var-Tail                 | **empty** &#124; **\[** *expression* **\]**                                                        |
 | expression               | *additive-expression* *expression-Tail*                                                            |
@@ -80,6 +80,20 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 | DELETED 27, 28, 29       | DELETED                                                                                            |
 
 
-### Modifications:
-1. program: replaced *declaration-list* with *params*.
-2. 
+### Implementation Issues and decisions:
+1. *program* rule
+   1. **problem**: The rule didn't work correctly because the definition of *declaration-list* couldn't be used to read the function parameters
+   2. **decision**: replaced *declaration-list* rule with *params* rule.
+2. *assignment-stmt* 
+   1. **problem**: assignment statements needed to be terminated with a semicolon.
+   2. **decision**: added semicolon to assignment-stmt(rule 18).
+
+
+
+### Handling syntax error:
+
+To handle syntax error we kept track of all the tokens read and their line number. On encountering an error, the program terminates after printing the token expected, the token found, and the line number at which the error happened.
+
+
+### Sample run
+![sample run](sample%20run.png)

@@ -98,7 +98,7 @@ bool match(std::string _expectedToken)
 int main(int argc, const char *argv[])
 {
     const char *intermediateFile = "testFile.txt";
-    const char *inputFile = "input.c";
+    const char *inputFile = argc >= 2 ? argv[1] : "input.c";
     if (lexAnalysis(intermediateFile, inputFile))
     {
         printf("Error in syntax analysis\n");
@@ -136,11 +136,21 @@ int main(int argc, const char *argv[])
     if (program() == false)
     {
         std::cerr << "Syntax error line # " << lookAheadToken->lineNumber << ", expected token (" << expectedToken << "), but got "
-                  << "(" <<  lookAheadToken->txt << ")";
+                  << "(" << lookAheadToken->txt << ")\n";
     }
+    else
+        std::cout << "Parsing has completed sucessfully!\n";
 
     remove(intermediateFile);
+
     return 0;
+}
+using namespace std;
+
+bool debug(int x = 0)
+{
+    cout << "Hello: " << x << "\n";
+    return true;
 }
 
 bool program()
@@ -148,7 +158,6 @@ bool program()
     return type_specifier() && match("main") && match(LPAREN) && params() && match(RPAREN) && match(LBRACE) && declaration_list() && statement_list() && match(RBRACE);
 }
 
-using namespace std;
 bool declaration_list()
 {
     return declaration() &&
@@ -175,18 +184,13 @@ bool var_declaration()
 
 bool var_declaration_tail()
 {
-    return match(SEMICOLON) ||
-           (match(LBRACKET) && match(NUM) && match(RBRACKET) && match(SEMICOLON));
+    return (match(LBRACKET) && match(NUM) && match(RBRACKET) && match(SEMICOLON)) || match(SEMICOLON);
 }
 
 bool type_specifier()
 {
-    if (isNext("int"))
-        return match("int");
-    else if (isNext("float"))
-        return match("float");
-    else
-        return false;
+    return match("int") ||
+           match("float");
 }
 
 bool params()
@@ -227,14 +231,9 @@ bool param_tail()
         return true;
 }
 
-bool func(){
-    cout<<"Hello World";
-    return true;
-}
-
 bool compound_stmt()
 {
-    return match(LBRACE) && statement_list()&& match(RBRACE);
+    return match(LBRACE) && statement_list() && match(RBRACE);
 }
 
 bool statement_list()
@@ -252,10 +251,10 @@ bool statement_list_tail()
 
 bool statement()
 {
-    return  selection_statement() ||
-            iteration_statement() ||
-            assignment_statement() ||
-            compound_stmt();
+    return selection_statement() ||
+           iteration_statement() ||
+           assignment_statement() ||
+           compound_stmt();
 }
 
 bool selection_statement()
@@ -289,7 +288,7 @@ bool assignment_statement()
 {
     return var() &&
            match(ASSIGN) &&
-           expression();
+           expression() && match(SEMICOLON);
 }
 
 bool var()
@@ -314,7 +313,7 @@ bool expression()
 bool expression_tail()
 {
     if (isNext(LT) || isNext(GT) || isNext(EQ) || isNext(NEQ))
-        return relop() && additive_expression() && expression_tail;
+        return relop() && additive_expression() && expression_tail();
     else
         return true;
 }
@@ -327,10 +326,8 @@ bool relop()
         return (match(GT) && relop_tail());
     else if (isNext(EQ))
         return match(EQ);
-    else if (isNext(NEQ))
-        return match(NEQ);
     else
-        return false;
+        return match(NEQ);
 }
 
 bool relop_tail()
@@ -349,6 +346,7 @@ bool additive_expression_tail()
 {
     if (isNext(PLUS) || isNext(MINUS))
         return addop() && term() && additive_expression_tail();
+
     return true;
 }
 
@@ -356,15 +354,12 @@ bool addop()
 {
     if (isNext(PLUS))
         return (match(PLUS));
-    else if (isNext(MINUS))
-        return (match(MINUS));
     else
-        return false;
+        return (match(MINUS));
 }
 
 bool term()
 {
-    cout<<"term: "<<lookAheadToken->txt<<endl;
     return factor() && term_tail();
 }
 
@@ -380,9 +375,8 @@ bool mulop()
 {
     if (isNext(MULT))
         return (match(MULT));
-    else if (isNext(DIV))
+    else
         return (match(DIV));
-    else return false;
 }
 
 bool factor()
@@ -391,11 +385,10 @@ bool factor()
         return match(NUM);
     else if (isNext(ID))
         return match(ID);
-    else if (isNext(LPAREN))
-        return match(LPAREN) && expression() && match(RPAREN);
     else
-        return false;
+        return match(LPAREN) && expression() && match(RPAREN);
+
     // return match(NUM) ||
     //        match(ID) ||
-    //        match(LPAREN) && expression() && match(RPAREN);
+    //        (match(LPAREN) && expression() && match(RPAREN));
 }

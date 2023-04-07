@@ -7,3 +7,9 @@ lexical-analyzer:
 
 semantic-analyzer:
 	@cd "semantic analyzer" && $(MAKE) --no-print-directory
+
+
+clean: 
+	@cd "lexical analyzer" && $(MAKE) clean --no-print-directory
+	@cd "semantic analyzer" && $(MAKE) clean --no-print-directory
+	
