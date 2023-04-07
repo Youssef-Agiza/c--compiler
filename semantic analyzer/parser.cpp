@@ -2,6 +2,27 @@
 #include <string>
 #include <fstream>
 
+
+#define PLUS        "PLUS"
+#define ASSIGN      "ASSIGN"
+#define MULT        "MULT"
+#define DIV         "DIV "
+#define LT          "LT"
+#define LEQ         "LEQ"
+#define GT          "GT"
+#define GEQ         "GEQ"
+#define EQ          "EQ"
+#define LBRACKET    "LBRACKET"
+#define RBRACKET    "RBRACKET"
+#define LPAREN      "LPAREN"
+#define RPAREN      "RPAREN"
+#define LBRACE      "LBRACE"
+#define RBRACE      "RBRACE"
+#define SEMICOLON   "SEMICOLON"
+#define COMMA       "COMMA"
+#define ID          "ID"
+#define NUM         "NUM"
+
 // Functions of the grammar
 bool program();
 bool declaration_list();
@@ -125,11 +146,15 @@ int main(int argc, const char* argv[])
 
 bool program()
 {
-    return  match("Program")    &&
-            match("ID")         &&
-            declaration_list()  &&
-            statement_list();
-
+    return  type_specifier() 
+            && match("main")
+            && match(LPAREN)
+            && declaration_list()
+            && match(RPAREN)
+            && match(LBRACE)
+            && declaration_list()
+            && statement_list()
+            && match(RBRACE);
 }
 
 bool declaration_list()
@@ -158,11 +183,11 @@ bool var_declaration()
 
 bool var_declaration_tail()
 {
-    return match("SIMICOLON") || 
-            (match("[") 
-            && match("NUM") 
-            && match("]") 
-            && match("SIMICOLON"));
+    return match(SEMICOLON) || 
+            (match(LBRACKET) 
+            && match(NUM) 
+            && match(RBRACKET) 
+            && match(SEMICOLON));
 }
 
 bool type_specifier()
@@ -182,22 +207,22 @@ bool param_list()
 
 bool param_list_tail()
 {
-    if (isNext("COMMA"))
-        return match("COMMA") && param() && param_list_tail();
+    if (isNext(COMMA))
+        return match(COMMA) && param() && param_list_tail();
     else
         return true;
 }
 
 bool param()
 {
-    return type_specifier() && match("ID") && param_tail();
+    return type_specifier() && match(ID) && param_tail();
 }
 
 bool param_tail()
 {
-    if (isNext("LBRACKET"))
+    if (isNext(LBRACKET))
     {
-        return match("LBRACKET") && match("RBRACKET");
+        return match(LBRACKET) && match(RBRACKET);
     }
     else return true;
 }

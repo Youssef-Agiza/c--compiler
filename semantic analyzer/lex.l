@@ -145,23 +145,23 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 {keywords}  { print_token(yytext); UPDATE_CHAR_POSITION; }
 
 
-{PLUS}     { print_token("PLUS"); UPDATE_CHAR_POSITION;}
-{ASSIGN}     { print_token("ASSIGN"); UPDATE_CHAR_POSITION;}
-{MULT}     { print_token("MULT"); UPDATE_CHAR_POSITION;}
-{DIV}     { print_token("DIV"); UPDATE_CHAR_POSITION;}
-{LT}     { print_token("LT"); UPDATE_CHAR_POSITION;}
-{LEQ}    { print_token("LEQ"); UPDATE_CHAR_POSITION;}
-{GT}    { print_token("GT"); UPDATE_CHAR_POSITION;}
-{GEQ}    { print_token("GEQ"); UPDATE_CHAR_POSITION;}
-{EQ}    { print_token("EQ"); UPDATE_CHAR_POSITION;}
-{LBRACKET}     { print_token("LBRACKET"); UPDATE_CHAR_POSITION;}
-{RBRACKET}     { print_token("RBRACKET"); UPDATE_CHAR_POSITION;}
-{LPAREN}     { print_token("LPAREN"); UPDATE_CHAR_POSITION;}
-{RPAREN}     { print_token("RPAREN"); UPDATE_CHAR_POSITION;}
-{LBRACE}     { print_token("LBRACE"); UPDATE_CHAR_POSITION;}
-{RBRACE}     { print_token("RBRACE"); UPDATE_CHAR_POSITION;}
+{PLUS}          { print_token("PLUS"); UPDATE_CHAR_POSITION;}
+{ASSIGN}        { print_token("ASSIGN"); UPDATE_CHAR_POSITION;}
+{MULT}          { print_token("MULT"); UPDATE_CHAR_POSITION;}
+{DIV}           { print_token("DIV"); UPDATE_CHAR_POSITION;}
+{LT}            { print_token("LT"); UPDATE_CHAR_POSITION;}
+{LEQ}           { print_token("LEQ"); UPDATE_CHAR_POSITION;}
+{GT}            { print_token("GT"); UPDATE_CHAR_POSITION;}
+{GEQ}           { print_token("GEQ"); UPDATE_CHAR_POSITION;}
+{EQ}            { print_token("EQ"); UPDATE_CHAR_POSITION;}
+{LBRACKET}      { print_token("LBRACKET"); UPDATE_CHAR_POSITION;}
+{RBRACKET}      { print_token("RBRACKET"); UPDATE_CHAR_POSITION;}
+{LPAREN}        { print_token("LPAREN"); UPDATE_CHAR_POSITION;}
+{RPAREN}        { print_token("RPAREN"); UPDATE_CHAR_POSITION;}
+{LBRACE}        { print_token("LBRACE"); UPDATE_CHAR_POSITION;}
+{RBRACE}        { print_token("RBRACE"); UPDATE_CHAR_POSITION;}
 {SEMICOLON}     { print_token("SEMICOLON"); UPDATE_CHAR_POSITION;}
-{COMMA}     { print_token("COMMA"); UPDATE_CHAR_POSITION;}
+{COMMA}         { print_token("COMMA"); UPDATE_CHAR_POSITION;}
 
 
 \n      { line_number++; char_position = 1;} /* Keep track of line numbers */

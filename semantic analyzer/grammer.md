@@ -8,7 +8,7 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 
 |       Symbol        |                                                     Definition                                                      | Needs Modification |
 | ------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------ |
-| program             | **Program** **ID** {*declaration-list* *statement-list*}                                                            |                    |
+| program             | *type-specifier* **main** **(** *declaration-list* **)** {*declaration-list* *statement-list*}                      |                    |
 | declaration-list    | *declaration-list* *declaration* &#124; *declaration*                                                               | YES (Left-Rec.)    |
 | declaration         | *var-declaration*                                                                                                   |                    |
 | var-declaration     | *type-specifie*r **ID** **;** &#124; *type-specifier* **ID** \[**NUM**\]                                            | YES (factoring)    |
@@ -40,7 +40,7 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 
 |          Symbol          |                                             Definition                                             |
 | ------------------------ | -------------------------------------------------------------------------------------------------- |
-| program                  | **Program** **ID** {*declaration-list* *statement-list*}                                           |
+| program                  | *type-specifier* **main** **(** *declaration-list* **)** {*declaration-list* *statement-list*}     |
 | declaration-list         | *declaration* *declaration-list-Tail*                                                              |
 | declaration-list-Tail    | *declaration* *declaration-list-Tail* &#124; **empty**                                             |
 | declaration              | *var-declaration*                                                                                  |
