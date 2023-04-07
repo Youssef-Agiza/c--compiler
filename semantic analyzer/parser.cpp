@@ -2,28 +2,27 @@
 #include <string>
 #include <fstream>
 
-
-#define PLUS        "PLUS"
-#define MINUS       "MINUS"
-#define ASSIGN      "ASSIGN"
-#define MULT        "MULT"
-#define DIV         "DIV "
-#define LT          "LT"
-#define LEQ         "LEQ"
-#define GT          "GT"
-#define GEQ         "GEQ"
-#define EQ          "EQ"
-#define NEQ         "NEQ"
-#define LBRACKET    "LBRACKET"
-#define RBRACKET    "RBRACKET"
-#define LPAREN      "LPAREN"
-#define RPAREN      "RPAREN"
-#define LBRACE      "LBRACE"
-#define RBRACE      "RBRACE"
-#define SEMICOLON   "SEMICOLON"
-#define COMMA       "COMMA"
-#define ID          "ID"
-#define NUM         "NUM"
+#define PLUS "PLUS"
+#define MINUS "MINUS"
+#define ASSIGN "ASSIGN"
+#define MULT "MULT"
+#define DIV "DIV "
+#define LT "LT"
+#define LEQ "LEQ"
+#define GT "GT"
+#define GEQ "GEQ"
+#define EQ "EQ"
+#define NEQ "NEQ"
+#define LBRACKET "LBRACKET"
+#define RBRACKET "RBRACKET"
+#define LPAREN "LPAREN"
+#define RPAREN "RPAREN"
+#define LBRACE "LBRACE"
+#define RBRACE "RBRACE"
+#define SEMICOLON "SEMICOLON"
+#define COMMA "COMMA"
+#define ID "ID"
+#define NUM "NUM"
 
 // Functions of the grammar
 bool program();
@@ -60,18 +59,17 @@ bool term_tail();
 bool mulop();
 bool factor();
 
+extern int lexAnalysis(const char *outFile, const char *inputFile);
 
-extern int lexAnalysis(const char* outFile, const char* inputFile);
-
-struct Token {
+struct Token
+{
     std::string txt;
     uint32_t lineNumber;
-    Token* next;
+    Token *next;
 };
 
-Token* lookAheadToken;
+Token *lookAheadToken;
 std::string foundToken;
-
 
 void nextToken()
 {
@@ -97,22 +95,22 @@ bool match(std::string currentToken)
     }
 }
 
-int main(int argc, const char* argv[])
+int main(int argc, const char *argv[])
 {
-    const char* intermediateFile = "testFile.txt";    
-    const char* inputFile = "input.c";
-    if (lexAnalysis(intermediateFile, inputFile)) 
+    const char *intermediateFile = "testFile.txt";
+    const char *inputFile = "input.c";
+    if (lexAnalysis(intermediateFile, inputFile))
     {
         printf("Error in syntax analysis\n");
         remove(intermediateFile);
-        return  1;
+        return 1;
     }
 
     std::ifstream inputStream(intermediateFile);
 
-    Token* list = nullptr;
-    Token* lastToken = nullptr;
-    while(!inputStream.eof())
+    Token *list = nullptr;
+    Token *lastToken = nullptr;
+    while (!inputStream.eof())
     {
         std::string token;
         uint32_t lineNumber;
@@ -125,21 +123,20 @@ int main(int argc, const char* argv[])
                 list = new Token{token, lineNumber, nullptr};
                 lastToken = list;
             }
-            else 
+            else
             {
                 lastToken->next = new Token{token, lineNumber, nullptr};
                 lastToken = lastToken->next;
             }
         }
-   }
+    }
     inputStream.close();
 
     lookAheadToken = list;
     if (program() == false)
     {
-        std::cerr << "Syntax error line # " << lookAheadToken->lineNumber << ", expected token (" << 
-        lookAheadToken->txt << "), but got " << "(" << foundToken << ")";
-
+        std::cerr << "Syntax error line # " << lookAheadToken->lineNumber << ", expected token (" << lookAheadToken->txt << "), but got "
+                  << "(" << foundToken << ")";
     }
 
     remove(intermediateFile);
@@ -148,28 +145,20 @@ int main(int argc, const char* argv[])
 
 bool program()
 {
-    return  type_specifier() 
-            && match("main")
-            && match(LPAREN)
-            && declaration_list()
-            && match(RPAREN)
-            && match(LBRACE)
-            && declaration_list()
-            && statement_list()
-            && match(RBRACE);
+    return type_specifier() && match("main") && match(LPAREN) && declaration_list() && match(RPAREN) && match(LBRACE) && declaration_list() && statement_list() && match(RBRACE);
 }
 
 bool declaration_list()
 {
-    return  declaration() &&
-            declaration_list_tail();
+    return declaration() &&
+           declaration_list_tail();
 }
 
 bool declaration_list_tail()
 {
     if (isNext("int") || isNext("float"))
         return declaration() && declaration_list_tail();
-    else 
+    else
         return true;
 }
 
@@ -180,26 +169,33 @@ bool declaration()
 
 bool var_declaration()
 {
-    return type_specifier() && match("ID") && var_declaration_tail();
+    return type_specifier() && match(ID) && var_declaration_tail();
 }
 
 bool var_declaration_tail()
 {
-    return match(SEMICOLON) || 
-            (match(LBRACKET) 
-            && match(NUM) 
-            && match(RBRACKET) 
-            && match(SEMICOLON));
+    return match(SEMICOLON) ||
+           (match(LBRACKET) && match(NUM) && match(RBRACKET) && match(SEMICOLON));
 }
 
 bool type_specifier()
 {
-    return match("int") || match("float");
+    if (isNext("int"))
+        return match("int");
+    else if (isNext("float"))
+        return match("float");
+    else
+        return false;
 }
 
 bool params()
 {
-    return param_list() || match("void");
+    if (isNext("void"))
+    {
+        return match("void");
+    }
+    else
+        return param_list();
 }
 
 bool param_list()
@@ -226,7 +222,8 @@ bool param_tail()
     {
         return match(LBRACKET) && match(RBRACKET);
     }
-    else return true;
+    else
+        return true;
 }
 
 bool compound_stmt()
@@ -241,7 +238,7 @@ bool statement_list()
 
 bool statement_list_tail()
 {
-    if (isNext("ID") || isNext("if") || isNext("while") || isNext("return") || isNext("int") || isNext("float") || isNext("void") || isNext(LBRACE))
+    if (isNext(ID) || isNext("if") || isNext("while") || isNext(LBRACE))
         return statement() && statement_list_tail();
     else
         return true;
@@ -257,12 +254,12 @@ bool statement()
 
 bool selection_statement()
 {
-    return  match("if") &&
-            match(LPAREN) &&
-            expression() &&
-            match(RPAREN) &&
-            statement() &&
-            selection_statement_tail();
+    return match("if") &&
+           match(LPAREN) &&
+           expression() &&
+           match(RPAREN) &&
+           statement() &&
+           selection_statement_tail();
 }
 
 bool selection_statement_tail()
@@ -275,24 +272,24 @@ bool selection_statement_tail()
 
 bool iteration_statement()
 {
-    return  match("while") &&
-            match(LPAREN) &&
-            expression() &&
-            match(RPAREN) &&
-            statement();
+    return match("while") &&
+           match(LPAREN) &&
+           expression() &&
+           match(RPAREN) &&
+           statement();
 }
 
 bool assignment_statement()
 {
-    return  var() &&
-            match(ASSIGN) &&
-            expression();
+    return var() &&
+           match(ASSIGN) &&
+           expression();
 }
 
 bool var()
 {
-    return  match("ID") &&
-            var_tail();
+    return match(ID) &&
+           var_tail();
 }
 
 bool var_tail()
@@ -305,12 +302,12 @@ bool var_tail()
 
 bool expression()
 {
-    return  additive_expression() && expression_tail();
+    return additive_expression() && expression_tail();
 }
 
 bool expression_tail()
 {
-    if (isNext(LT)||isNext(GT)||isNext(EQ)||isNext(NEQ))
+    if (isNext(LT) || isNext(GT) || isNext(EQ) || isNext(NEQ))
         return relop() && additive_expression() && expression_tail;
     else
         return true;
@@ -318,41 +315,48 @@ bool expression_tail()
 
 bool relop()
 {
-    return (match(LT) && relop_tail) || match (LT) || match(GT) || (match(GT) && relop_tail)|| match(EQ) || match(NEQ);
+    if (isNext(LT))
+        return (match(LT) && relop_tail());
+    else if (isNext(GT))
+        return (match(GT) && relop_tail());
+    else if (isNext(EQ))
+        return match(EQ);
+    else if (isNext(NEQ))
+        return match(NEQ);
+    else
+        return false;
 }
 
 bool relop_tail()
 {
-    if(isNext(ASSIGN))
+    if (isNext(ASSIGN))
         return match(ASSIGN);
-    else
-        return true;
+    return true;
 }
 
 bool additive_expression()
 {
-    return  term() && additive_expression_tail();
+    return term() && additive_expression_tail();
 }
 
 bool additive_expression_tail()
 {
     if (isNext(PLUS) || isNext(MINUS))
         return addop() && term() && additive_expression_tail();
-    else
-        return true;
+    return true;
 }
 
 bool addop()
 {
     if (isNext(PLUS))
         return (match(PLUS));
-    else if (isNext(MINUS))
+    if (isNext(MINUS))
         return (match(MINUS));
 }
 
 bool term()
 {
-    return  factor() && term_tail();
+    return factor() && term_tail();
 }
 
 bool term_tail()
@@ -369,12 +373,20 @@ bool mulop()
         return (match(MULT));
     else if (isNext(DIV))
         return (match(DIV));
+    else return false;
 }
 
 bool factor()
 {
-    return  match(NUM) ||
-            match(ID) ||
-            match(LPAREN) && expression() && match(RPAREN);
+    if (isNext(NUM))
+        return match(NUM);
+    else if (isNext(ID))
+        return match(ID);
+    else if (isNext(LPAREN))
+        return match(LPAREN) && expression() && match(RPAREN);
+    else
+        return false;
+    // return match(NUM) ||
+    //        match(ID) ||
+    //        match(LPAREN) && expression() && match(RPAREN);
 }
-

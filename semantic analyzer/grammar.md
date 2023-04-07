@@ -68,7 +68,7 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 | var-Tail                 | **empty** &#124; **\[** *expression* **\]**                                                        |
 | expression               | *additive-expression* *expression-Tail*                                                            |
 | expression-Tail          | *relop* *additive-expression* *expression-Tail* &#124; **empty**                                   |
-| relop                    | **<** *relop-Tail* &#124; **<** &#124; **>** &#124; **>** *relop-Tail* &#124; **==** &#124; **!=** |
+| relop                    | **<** *relop-Tail* &#124; **>** *relop-Tail* &#124; **==** &#124; **!=** |
 | relop-Tail               | **=** &#124; **empty**                                                                             |
 | additive-expression      | *term* *additive-expression-Tail*                                                                  |
 | additive-expression-Tail | *addop* *term* *additive-expression-Tail* &#124; **empty**                                         |
