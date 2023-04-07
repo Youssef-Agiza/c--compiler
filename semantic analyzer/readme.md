@@ -82,8 +82,8 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 
 ### Implementation Issues and decisions:
 1. *program* rule
-   1. **problem**: The rule didn't work correctly because the definition of *declaration-list* couldn't be used to read the function parameters
-   2. **decision**: replaced *declaration-list* rule with *params* rule.
+   1. **problem**: The rule doesn't match the intended start of the file. (int main() {})
+   2. **decision**: Changed the rule to work with the input we want that takes (int main() { })
 2. *assignment-stmt* 
    1. **problem**: assignment statements needed to be terminated with a semicolon.
    2. **decision**: added semicolon to assignment-stmt(rule 18).

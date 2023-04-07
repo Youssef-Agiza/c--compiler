@@ -139,7 +139,7 @@ int main(int argc, const char *argv[])
                   << "(" << lookAheadToken->txt << ")\n";
     }
     else
-        std::cout << "Parsing has completed sucessfully!\n";
+        std::cout << "Parsing has completed successfully!\n";
 
     remove(intermediateFile);
 
