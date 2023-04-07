@@ -98,6 +98,7 @@ LEQ "<="
 GT ">"
 GEQ ">="
 EQ "=="
+NEQ "!="
 LBRACKET "["
 RBRACKET "]"
 LPAREN "("
@@ -146,6 +147,7 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 
 
 {PLUS}          { print_token("PLUS"); UPDATE_CHAR_POSITION;}
+{MINUS}         { print_token("MINUS"); UPDATE_CHAR_POSITION;}
 {ASSIGN}        { print_token("ASSIGN"); UPDATE_CHAR_POSITION;}
 {MULT}          { print_token("MULT"); UPDATE_CHAR_POSITION;}
 {DIV}           { print_token("DIV"); UPDATE_CHAR_POSITION;}
@@ -154,6 +156,7 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 {GT}            { print_token("GT"); UPDATE_CHAR_POSITION;}
 {GEQ}           { print_token("GEQ"); UPDATE_CHAR_POSITION;}
 {EQ}            { print_token("EQ"); UPDATE_CHAR_POSITION;}
+{NEQ}           { print_token("NEQ"); UPDATE_CHAR_POSITION;}
 {LBRACKET}      { print_token("LBRACKET"); UPDATE_CHAR_POSITION;}
 {RBRACKET}      { print_token("RBRACKET"); UPDATE_CHAR_POSITION;}
 {LPAREN}        { print_token("LPAREN"); UPDATE_CHAR_POSITION;}

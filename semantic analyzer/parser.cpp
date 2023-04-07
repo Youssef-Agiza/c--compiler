@@ -4,6 +4,7 @@
 
 
 #define PLUS        "PLUS"
+#define MINUS       "MINUS"
 #define ASSIGN      "ASSIGN"
 #define MULT        "MULT"
 #define DIV         "DIV "
@@ -12,6 +13,7 @@
 #define GT          "GT"
 #define GEQ         "GEQ"
 #define EQ          "EQ"
+#define NEQ         "NEQ"
 #define LBRACKET    "LBRACKET"
 #define RBRACKET    "RBRACKET"
 #define LPAREN      "LPAREN"
@@ -165,7 +167,7 @@ bool declaration_list()
 
 bool declaration_list_tail()
 {
-    if (isNext("int") || isNext("void"))
+    if (isNext("int") || isNext("float"))
         return declaration() && declaration_list_tail();
     else 
         return true;
@@ -229,106 +231,150 @@ bool param_tail()
 
 bool compound_stmt()
 {
-
+    return match(LBRACE) && statement_list() && match(RBRACE);
 }
 
 bool statement_list()
 {
-
+    return statement_list_tail();
 }
 
 bool statement_list_tail()
 {
-
+    if (isNext("ID") || isNext("if") || isNext("while") || isNext("return") || isNext("int") || isNext("float") || isNext("void") || isNext(LBRACE))
+        return statement() && statement_list_tail();
+    else
+        return true;
 }
 
 bool statement()
 {
-
+    return  selection_statement() ||
+            iteration_statement() ||
+            assignment_statement() ||
+            compound_stmt();
 }
 
 bool selection_statement()
 {
-
+    return  match("if") &&
+            match(LPAREN) &&
+            expression() &&
+            match(RPAREN) &&
+            statement() &&
+            selection_statement_tail();
 }
 
 bool selection_statement_tail()
 {
-
+    if (isNext("else"))
+        return match("else") && statement();
+    else
+        return true;
 }
 
 bool iteration_statement()
 {
-
+    return  match("while") &&
+            match(LPAREN) &&
+            expression() &&
+            match(RPAREN) &&
+            statement();
 }
 
 bool assignment_statement()
 {
-
+    return  var() &&
+            match(ASSIGN) &&
+            expression();
 }
 
 bool var()
 {
-
+    return  match("ID") &&
+            var_tail();
 }
 
 bool var_tail()
 {
-
+    if (isNext(LBRACKET))
+        return match(LBRACKET) && expression() && match(RBRACKET);
+    else
+        return true;
 }
 
 bool expression()
 {
-
+    return  additive_expression() && expression_tail();
 }
 
 bool expression_tail()
 {
-
+    if (isNext(LT)||isNext(GT)||isNext(EQ)||isNext(NEQ))
+        return relop() && additive_expression() && expression_tail;
+    else
+        return true;
 }
 
 bool relop()
 {
-
+    return (match(LT) && relop_tail) || match (LT) || match(GT) || (match(GT) && relop_tail)|| match(EQ) || match(NEQ);
 }
 
 bool relop_tail()
 {
-
+    if(isNext(ASSIGN))
+        return match(ASSIGN);
+    else
+        return true;
 }
 
 bool additive_expression()
 {
-
+    return  term() && additive_expression_tail();
 }
 
 bool additive_expression_tail()
 {
-
+    if (isNext(PLUS) || isNext(MINUS))
+        return addop() && term() && additive_expression_tail();
+    else
+        return true;
 }
 
 bool addop()
 {
-
+    if (isNext(PLUS))
+        return (match(PLUS));
+    else if (isNext(MINUS))
+        return (match(MINUS));
 }
 
 bool term()
 {
-
+    return  factor() && term_tail();
 }
 
 bool term_tail()
 {
-
+    if (isNext(MULT) || isNext(DIV))
+        return mulop() && factor() && term_tail();
+    else
+        return true;
 }
 
 bool mulop()
 {
-
+    if (isNext(MULT))
+        return (match(MULT));
+    else if (isNext(DIV))
+        return (match(DIV));
 }
 
 bool factor()
 {
-
+    return  match(NUM) ||
+            match(ID) ||
+            match(LPAREN) && expression() && match(RPAREN);
 }
 
