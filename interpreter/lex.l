@@ -183,8 +183,8 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 {ws}    {UPDATE_CHAR_POSITION;} /* Keep track of character positions */
 
 
-{ID}             { print_token("ID"); UPDATE_CHAR_POSITION;}
-{num}            { print_token("NUM"); UPDATE_CHAR_POSITION;}
+{ID}             { print_token("ID %s", yytext); UPDATE_CHAR_POSITION;}
+{num}            { print_token("NUM %s", yytext); UPDATE_CHAR_POSITION;}
 
 
 {invalid_num} {UPDATE_CHAR_POSITION; print_parsing_error("Invalid number"); }
@@ -206,71 +206,3 @@ int lexAnalysis(const char* outFile, const char* inputFile)
 
     return found_err;
 }
-
-
-// int main(int argc, char *argv[])
-// {
-
-//     sync_stdout_stderr();
-
-//     int flags = 0;
-//     int i = 1;
-//     for (i = 1; i < argc; i++)
-//     {
-//         if (strcmp(argv[i], "--stop-on-error") == 0 || strcmp(argv[i], "-s") == 0)
-//         {
-//             stop_at_first_error = 1;
-//             flags++;
-//         }
-
-//         if (strcmp(argv[i], "--compact") == 0 || strcmp(argv[i], "-c") == 0)
-//         {
-//             print_compact = 1;
-//             flags++;
-//         }
-//         if (strcmp(argv[i], "--output") == 0 || strcmp(argv[i], "-o") == 0)
-//         {
-//             if (i + 1 < argc)
-//             {
-//                 output_to_file = 1;
-//                 i++;
-//                 freopen(argv[i], "w", stdout);
-
-//                 argc -= 2;
-//                 int j = i;
-//                 for (j = i; j < argc; j++)
-//                 {
-//                     argv[j] = argv[j + 2];
-//                 }
-//             }
-//             else throw_error("Error: no file name provided for --output|-o\n");
-//         }
-//     }
-
-//     argc -= flags;
-//     argv += flags;
-
-//     if (argc == 1)
-//     {
-//         printf("usage: %s [--stop-on-error|-s] [--compact|-c] file1 file2 [--output|-o file]\n", argv[0]);
-//         return 1;
-//     }
-
-//     if (strcmp){
-//         int i = 1;
-//         for (i = 1; i < argc; i++)
-//         {
-//             FILE *file = fopen(argv[i], "r");
-//             if (!file)
-//             {
-//                 fprintf(stderr, "Error: could not open file %s\n", argv[i]);
-//                 return 1;
-//             }
-//             yyin = file;
-//             yylex();
-//             fclose(file);
-//         }
-//     }
-//     printf("\n");
-//     return 0;
-// }

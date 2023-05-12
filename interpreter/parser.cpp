@@ -1,6 +1,9 @@
 #include <iostream>
 #include <string>
 #include <fstream>
+#include <unordered_map>
+#include <algorithm>
+#include <assert.h>
 
 #define PLUS "PLUS"
 #define MINUS "MINUS"
@@ -30,7 +33,7 @@ bool declaration_list();
 bool declaration_list_tail();
 bool declaration();
 bool var_declaration();
-bool var_declaration_tail();
+int var_declaration_tail();
 bool type_specifier();
 bool params();
 bool param_list();
@@ -64,12 +67,81 @@ extern int lexAnalysis(const char *outFile, const char *inputFile);
 struct Token
 {
 	std::string txt;
+	std::string value;
 	uint32_t lineNumber;
 	Token *next;
 };
 
+
+uint32_t lineNumber;
+std::string error_line, match_error;
 Token *lookAheadToken;
 std::string expectedToken;
+
+struct Symbol{
+	union{
+		int as_int = 0;
+		float as_float;
+		Symbol* as_pointer;
+	};
+	uint32_t size = 0;
+	std::string name = "";
+	uint32_t declaration_line = 0;
+	enum TYPE{
+		INT,
+		FLOAT,
+		POINTER,
+		VOID,
+		COUNT
+	} type;
+};
+std::string symbolTypes[] = {
+	"int",
+	"float",
+	"pointer",
+	"void",
+	"INVALID"
+};
+
+std::ostream& operator<<(std::ostream& stream, const Symbol& sym)
+{
+	stream << "Symbol: (" << sym.name << ", " << symbolTypes[sym.type];
+	if (sym.type == Symbol::POINTER)
+	{
+		stream << ", " << sym.size;
+	}
+	stream << ", " << sym.declaration_line;
+	if (sym.type == Symbol::INT)
+		stream << ", " << sym.as_int;
+	else if (sym.type == Symbol::FLOAT)
+		stream << ", " << sym.as_float;
+	else if (sym.type == Symbol::POINTER)
+		stream << ", " << std::hex << sym.as_pointer;
+
+	stream << ")";
+	return stream;
+}
+
+
+std::unordered_map<std::string, Symbol> symbolTable;
+Symbol last_number_symbol;
+
+Symbol::TYPE lastType;
+Symbol* lastSymbol;
+uint32_t tmp_count = 0;
+std::string operation;
+
+bool lookup(const std::string& symbolName)
+{
+	return symbolTable.find(symbolName) != symbolTable.end();
+}
+
+Symbol::TYPE getType(const std::string& symbolName)
+{
+	if (lookup(symbolName))
+		return symbolTable[symbolName].type;
+	else return Symbol::COUNT;
+}
 
 void nextToken()
 {
@@ -81,8 +153,28 @@ bool isNext(std::string currentToken)
 	return (lookAheadToken->txt == currentToken);
 }
 
+bool is_integer_number(const std::string& str)
+{
+	for(auto& c : str)
+		if (isdigit(c) == false)
+			return false;
+	return true;
+}
+
+bool is_float_number(const std::string& str)
+{
+	try {
+		std::stof(str);
+		return true;
+	} catch (...) {
+		return false;
+	}
+}
+
 bool match(std::string _expectedToken)
 {
+	lineNumber = lookAheadToken->lineNumber;
+	// std::cout << "MATCHING " << lookAheadToken->txt << ", " << _expectedToken << '\n';
 	if (lookAheadToken->txt == _expectedToken)
 	{
 		nextToken();
@@ -90,10 +182,118 @@ bool match(std::string _expectedToken)
 	}
 	else
 	{
-		expectedToken = _expectedToken;
+		match_error = std::string("Syntax error line # ") +
+			std::to_string(lineNumber) + " expected token: " + _expectedToken
+			+ " but got " + lookAheadToken->txt ;
 		return false;
 	}
 }
+
+Symbol* match_declared()
+{
+	if (lookAheadToken->txt == "ID")
+	{
+		const std::string& symbolName = lookAheadToken->value;
+		// match(ID);
+		nextToken();
+		if (symbolTable.find(symbolName) == symbolTable.end())
+		{
+			match_error = "Undeclared variable: " + symbolName;
+			return nullptr;
+		}
+		else
+		{
+			return &symbolTable[symbolName];
+		}
+	}
+		match_error = "Failed to match declared ID";
+	return nullptr;
+}
+
+Symbol* match_undeclared()
+{
+	if (lookAheadToken->txt == "ID")
+	{
+		std::string symbolName = lookAheadToken->value;
+
+		if (symbolTable.find(symbolName) == symbolTable.end())
+		{
+			Symbol symbol;
+			symbol.name = symbolName;
+			symbol.declaration_line = lookAheadToken->lineNumber;
+			symbol.type = lastType;
+			symbolTable.insert({symbolName, symbol});
+
+			// match(ID);
+			nextToken();
+			return &symbolTable[symbolName];
+		}
+		else
+		{
+			error_line = "Redeclaring an already declared variable: " + symbolTable[symbolName].name + " in line: #" + std::to_string(lookAheadToken->lineNumber)
+			+ " Declared in line: " + std::to_string(symbolTable[symbolName].declaration_line);
+			return nullptr;
+		}
+	}
+	error_line = "Failed to match undeclared ID";
+	return nullptr;
+}
+
+Symbol* match_number()
+{
+	if (lookAheadToken->txt == NUM)
+	{
+		if (is_integer_number(lookAheadToken->value))
+		{
+			std::string name = std::string("INTERNAL_INT_TMP_") + std::to_string(tmp_count);
+			tmp_count++;
+			Symbol tmp_symbol{};
+			tmp_symbol.type = Symbol::INT;
+			tmp_symbol.declaration_line = lookAheadToken->lineNumber;
+			tmp_symbol.as_int = std::stoi(lookAheadToken->value);
+			tmp_symbol.name = name;
+
+			// match(NUM);
+			nextToken();
+			symbolTable.insert({name, tmp_symbol});
+			return &symbolTable[name];
+		}
+		else if (is_float_number(lookAheadToken->value))
+		{
+			std::string name = std::string("INTERNAL_FLOAT_TMP_") + std::to_string(tmp_count);
+			tmp_count++;
+			Symbol tmp_symbol{};
+			tmp_symbol.type = Symbol::FLOAT;
+			tmp_symbol.declaration_line = lookAheadToken->lineNumber;
+			tmp_symbol.as_float = std::stof(lookAheadToken->value);
+			tmp_symbol.name = name;
+
+			// match(NUM);
+			nextToken();
+			symbolTable.insert({name, tmp_symbol});
+			return &symbolTable[name];
+		}
+		else
+		{
+			error_line = "Invalid number!";
+			return nullptr;
+		}
+	}
+	error_line = "Failed to match a number";
+	return nullptr;
+}
+
+void printSymbolTable()
+{
+	std::cout << "************************************\n";
+	std::cout << "Symbol Table: \n";
+	for (auto& symbols : symbolTable)
+	{
+		std::cout << symbols.second << '\n';
+	}
+	std::cout << "************************************\n";
+}
+
 
 int main(int argc, const char *argv[])
 {
@@ -117,28 +317,32 @@ int main(int argc, const char *argv[])
 		return 1;
 	}
 
-
-
 	std::ifstream inputStream(intermediateFile);
 
 	Token *list = nullptr;
 	Token *lastToken = nullptr;
 	while (!inputStream.eof())
 	{
-		std::string token;
-		uint32_t lineNumber;
+		std::string token, value;
+		uint32_t lineNum;
 
-		inputStream >> token >> lineNumber;
+		inputStream >> token;
 		if (token.empty() == false)
 		{
+			if (token == "ID" || token == "NUM")
+			{
+				inputStream >> value;
+			}
+
+			inputStream >> lineNum;
 			if (list == nullptr)
 			{
-				list = new Token{token, lineNumber, nullptr};
+				list = new Token{token, value, lineNum, nullptr};
 				lastToken = list;
 			}
 			else
 			{
-				lastToken->next = new Token{token, lineNumber, nullptr};
+				lastToken->next = new Token{token, value, lineNum, nullptr};
 				lastToken = lastToken->next;
 			}
 		}
@@ -148,13 +352,18 @@ int main(int argc, const char *argv[])
 	lookAheadToken = list;
 	if (program() == false)
 	{
-		std::cerr << "Syntax error line # " << lookAheadToken->lineNumber << ", expected token (" << expectedToken << "), but got "
-				  << "(" << lookAheadToken->txt << ")\n";
+		if (error_line.empty())
+			std::cerr << match_error << '\n';
+		else
+			std::cerr << error_line << '\n';
 	}
 	else
 		std::cout << "Parsing has completed successfully!\n";
 
-	remove(intermediateFile);
+	printSymbolTable();
+
+
+	// remove(intermediateFile);
 
 	return 0;
 }
@@ -168,7 +377,9 @@ bool debug(int x = 0)
 
 bool program()
 {
-	return type_specifier() && match("main") && match(LPAREN) && params() && match(RPAREN) && match(LBRACE) && declaration_list() && statement_list() && match(RBRACE);
+	return type_specifier() && match("main")
+	&& match(LPAREN) && params()
+	&& match(RPAREN) && match(LBRACE) && declaration_list() && statement_list() && match(RBRACE);
 }
 
 bool declaration_list()
@@ -192,18 +403,73 @@ bool declaration()
 
 bool var_declaration()
 {
-	return type_specifier() && match(ID) && var_declaration_tail();
+	if (type_specifier())
+	{
+ 		Symbol* symbol = match_undeclared();
+		if (symbol == nullptr)
+		{
+			return false;
+		}
+		int size = var_declaration_tail();
+		if (size == 0)
+			return false;
+
+		symbol->size = size;
+		if (size != 1)
+		{
+			symbol->size = size;
+			symbol->type = Symbol::POINTER;
+			symbol->as_pointer = new Symbol[size];
+			for(int i = 0; i < size; i++)
+			{
+				symbol->as_pointer[i].type = lastType;
+				symbol->as_pointer[i].size = 1;
+				symbol->as_pointer[i].name = symbol->name + "_" + std::to_string(i);
+				symbol->as_pointer[i].declaration_line = symbol->declaration_line;
+			}
+		}
+		return true;
+	}
+	else
+	{
+		error_line = "";
+		return false;
+	}
 }
 
-bool var_declaration_tail()
+int var_declaration_tail()
 {
-	return (match(LBRACKET) && match(NUM) && match(RBRACKET) && match(SEMICOLON)) || match(SEMICOLON);
+	if (match(SEMICOLON))
+		return 1;
+	else if (match(LBRACKET))
+	{
+		Symbol* number = match_number();
+
+		if (number != nullptr && number->type != Symbol::INT)
+		{
+			error_line = "Invalid Array size in line #" + std::to_string(lineNumber);
+			return 0;
+		}
+		if (match(RBRACKET) && match(SEMICOLON))
+			return number->as_int;
+	}
+	return 0;
 }
 
 bool type_specifier()
 {
-	return match("int") ||
-		   match("float");
+	if (match("int"))
+	{
+		lastType = Symbol::TYPE::INT;
+		return true;
+	}
+	else if (match("float"))
+	{
+		lastType = Symbol::TYPE::FLOAT;
+		return true;
+	}
+	error_line = "Unmatched type specifier found: " + lookAheadToken->txt + " line number #" + std::to_string(lineNumber);
+	return false;
 }
 
 bool params()
@@ -266,8 +532,8 @@ bool statement()
 {
 	return selection_statement() ||
 		   iteration_statement() ||
-		   assignment_statement() ||
-		   compound_stmt();
+		   compound_stmt() ||
+		   assignment_statement();
 }
 
 bool selection_statement()
@@ -299,15 +565,24 @@ bool iteration_statement()
 
 bool assignment_statement()
 {
-	return var() &&
-		   match(ASSIGN) &&
-		   expression() && match(SEMICOLON);
+	if (var())
+	{
+		if (match(ASSIGN))
+		{
+			return expression() && match(SEMICOLON);
+		}
+	}
+	return false;
 }
 
 bool var()
 {
-	return match(ID) &&
-		   var_tail();
+	Symbol* symbol = match_declared();
+	if (symbol == nullptr)
+		return false;
+	lastSymbol = symbol;
+
+	return var_tail();
 }
 
 bool var_tail()
@@ -366,9 +641,23 @@ bool additive_expression_tail()
 bool addop()
 {
 	if (isNext(PLUS))
-		return (match(PLUS));
+	{
+		if (match(PLUS))
+		{
+			operation = "+";
+			return true;
+		}
+		return false;
+	}
 	else
-		return (match(MINUS));
+	{
+		if (match(MINUS))
+		{
+			operation = "-";
+			return true;
+		}
+		return false;
+	}
 }
 
 bool term()
@@ -387,21 +676,126 @@ bool term_tail()
 bool mulop()
 {
 	if (isNext(MULT))
-		return (match(MULT));
+	{
+		if (match(MULT))
+		{
+			operation = "*";
+			return true;
+		}
+		return false;
+	}
 	else
-		return (match(DIV));
+	{
+		if (match(DIV))
+		{
+			operation = "/";
+			return true;
+		}
+		return false;
+	}
+
 }
 
 bool factor()
 {
+	// Now we need to start doing something
 	if (isNext(NUM))
-		return match(NUM);
+	{
+		auto numberSym = match_number();
+		if (numberSym == nullptr)
+			return false;
+
+		// std::cout << "TYPES: " << symbolTypes[lastSymbol->type] << ", " << symbolTypes[numberSym->type] << '\n';
+		if (lastSymbol->type != numberSym->type)
+		{
+			std::cout << "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+			error_line = "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+			return false;
+		}
+		switch(numberSym->type){
+			case Symbol::FLOAT:
+				if (operation.empty()) lastSymbol->as_float = numberSym->as_float;
+				else if (operation == "+") lastSymbol->as_float += numberSym->as_float;
+				else if (operation == "-") lastSymbol->as_float -= numberSym->as_float;
+				else if (operation == "*") lastSymbol->as_float *= numberSym->as_float;
+				else if (operation == "/") {
+					if (numberSym->as_float == 0)
+					{
+						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+						exit(10);
+					}
+					lastSymbol->as_float /= numberSym->as_float;
+				}
+			break;
+			case Symbol::INT:
+				if (operation.empty()) lastSymbol->as_int = numberSym->as_int;
+				else if (operation == "+") lastSymbol->as_int += numberSym->as_int;
+				else if (operation == "-") lastSymbol->as_int -= numberSym->as_int;
+				else if (operation == "*") lastSymbol->as_int *= numberSym->as_int;
+				else if (operation == "/") {
+					if (numberSym->as_int == 0)
+					{
+						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+						exit(10);
+					}
+					lastSymbol->as_int /= numberSym->as_int;
+				}
+			break;
+			default:
+				// error?
+				break;
+		}
+		operation = "";
+		return true;
+	}
 	else if (isNext(ID))
-		return match(ID);
+	{
+		auto idSymbol = match_declared();
+		if (idSymbol == nullptr)
+			return false;
+
+		if (lastSymbol->type != idSymbol->type)
+		{
+			std::cout << "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+			error_line = "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+			return false;
+		}
+		switch(idSymbol->type){
+			case Symbol::FLOAT:
+				if (operation.empty()) lastSymbol->as_float = idSymbol->as_float;
+				else if (operation == "+") lastSymbol->as_float += idSymbol->as_float;
+				else if (operation == "-") lastSymbol->as_float -= idSymbol->as_float;
+				else if (operation == "*") lastSymbol->as_float *= idSymbol->as_float;
+				else if (operation == "/") {
+					if (idSymbol->as_float == 0.0f)
+					{
+						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+						exit(10);
+					}
+					lastSymbol->as_float /= idSymbol->as_float;
+				}
+			break;
+			case Symbol::INT:
+				if (operation.empty()) lastSymbol->as_int = idSymbol->as_int;
+				else if (operation == "+") lastSymbol->as_int += idSymbol->as_int;
+				else if (operation == "-") lastSymbol->as_int -= idSymbol->as_int;
+				else if (operation == "*") lastSymbol->as_int *= idSymbol->as_int;
+				else if (operation == "/") {
+					if (idSymbol->as_int == 0)
+					{
+						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+						exit(10);
+					}
+					lastSymbol->as_int /= idSymbol->as_int;
+				}
+			break;
+			default:
+				// error?
+				break;
+		}
+		operation = "";
+		return true;
+	}
 	else
 		return match(LPAREN) && expression() && match(RPAREN);
-
-	// return match(NUM) ||
-	//        match(ID) ||
-	//        (match(LPAREN) && expression() && match(RPAREN));
 }
