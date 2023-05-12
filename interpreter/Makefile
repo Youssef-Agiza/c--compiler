@@ -5,8 +5,7 @@ OUTPUT_BINARY_NAME= parser.out
 INPUT_FILE= input_err2.c
 LEX_FILE= lex.l
 
-SOURCE_FILE= parser.cpp interpreter.cpp
-
+SOURCE_FILE= parser.cpp
 
 all: buildDir
 	cd $(BUILD_DIR) && flex -C ../$(LEX_FILE)
