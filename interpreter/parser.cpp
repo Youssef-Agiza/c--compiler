@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <algorithm>
 #include <assert.h>
+#include <vector>
 
 #define PLUS "PLUS"
 #define MINUS "MINUS"
@@ -78,6 +79,11 @@ std::string error_line, match_error;
 Token *lookAheadToken;
 std::string expectedToken;
 
+std::vector<uint32_t> expression_is_true;
+bool shouldExecute = true;
+bool outputOfExpression = false;
+std::string relationOp;
+
 struct Symbol{
 	union{
 		int as_int = 0;
@@ -103,6 +109,9 @@ std::string symbolTypes[] = {
 	"INVALID"
 };
 
+Symbol* left_v = nullptr, *right_v = nullptr;
+
+
 std::ostream& operator<<(std::ostream& stream, const Symbol& sym)
 {
 	stream << "Symbol: (" << sym.name << ", " << symbolTypes[sym.type];
@@ -124,12 +133,29 @@ std::ostream& operator<<(std::ostream& stream, const Symbol& sym)
 
 
 std::unordered_map<std::string, Symbol> symbolTable;
-Symbol last_number_symbol;
 
 Symbol::TYPE lastType;
 Symbol* lastSymbol;
 uint32_t tmp_count = 0;
 std::string operation;
+
+
+bool removeTmps()
+{
+	bool removedSomething = true;
+	while(removedSomething)
+	for(auto& sym : symbolTable)
+		if (sym.first.find("INTERNAL_INT_TMP_") != std::string::npos || (sym.first.find("INTERNAL_FLOAT_TMP_") != std::string::npos))
+		{
+			symbolTable.erase(sym.first);
+			removedSomething = true;
+			break;
+		}
+		else
+			removedSomething = false;
+			
+	return true;
+}
 
 bool lookup(const std::string& symbolName)
 {
@@ -360,19 +386,13 @@ int main(int argc, const char *argv[])
 	else
 		std::cout << "Parsing has completed successfully!\n";
 
+	removeTmps();
 	printSymbolTable();
 
 
 	// remove(intermediateFile);
 
 	return 0;
-}
-using namespace std;
-
-bool debug(int x = 0)
-{
-	cout << "Hello: " << x << "\n";
-	return true;
 }
 
 bool program()
@@ -530,20 +550,58 @@ bool statement_list_tail()
 
 bool statement()
 {
-	return selection_statement() ||
-		   iteration_statement() ||
-		   compound_stmt() ||
-		   assignment_statement();
+	return assignment_statement() || compound_stmt() || selection_statement() ||
+			iteration_statement();
 }
 
 bool selection_statement()
 {
-	return match("if") &&
-		   match(LPAREN) &&
-		   expression() &&
-		   match(RPAREN) &&
-		   statement() &&
-		   selection_statement_tail();
+	Token* currentToken = lookAheadToken;
+	bool parsable =  match("if") &&
+			match(LPAREN) &&
+			expression() &&
+			match(RPAREN) &&
+			statement() &&
+			selection_statement_tail();
+
+	if (!shouldExecute)
+		return parsable;
+	
+	lookAheadToken = currentToken;
+
+	match("if");
+	match(LPAREN);
+	
+	expression();
+	if (left_v && right_v)
+	{
+		if (relationOp == LT)
+			shouldExecute = left_v < right_v;
+		else if (relationOp == GT)
+			shouldExecute = left_v > right_v;
+		else if (relationOp == EQ)
+			shouldExecute = left_v == right_v;
+		else if (relationOp == NEQ)
+			shouldExecute = left_v != right_v;
+		else
+			shouldExecute = false;
+	}
+	else if (left_v && !right_v)
+		shouldExecute = left_v->as_int != 0;
+	else if (!left_v && right_v)
+		shouldExecute = right_v->as_int != 0;
+	else
+		shouldExecute = false;
+
+
+	match(RPAREN);
+	statement();
+	shouldExecute = ~shouldExecute; 
+	selection_statement_tail();
+
+	shouldExecute = true;
+	// TODO: FIX THIS
+	return true;
 }
 
 bool selection_statement_tail()
@@ -556,15 +614,61 @@ bool selection_statement_tail()
 
 bool iteration_statement()
 {
-	return match("while") &&
-		   match(LPAREN) &&
-		   expression() &&
-		   match(RPAREN) &&
-		   statement();
+	Token* currentToken = lookAheadToken;
+	bool parsable = match("while") &&
+           match(LPAREN) &&
+           expression() &&
+           match(RPAREN) &&
+           statement();
+
+	if (!shouldExecute)
+		return parsable;
+	
+	do
+	{
+		lookAheadToken = currentToken;
+		match("while");
+		match(LPAREN);
+		expression();
+
+		// outputOfExpression = lastSymbol->as_int != 0;
+		if (left_v && right_v)
+		{
+			if (relationOp == LT)
+				shouldExecute = left_v < right_v;
+			else if (relationOp == GT)
+				shouldExecute = left_v > right_v;
+			else if (relationOp == EQ)
+				shouldExecute = left_v == right_v;
+			else if (relationOp == NEQ)
+				shouldExecute = left_v != right_v;
+			else
+				shouldExecute = false;
+		}
+		else if (left_v && !right_v)
+			shouldExecute = left_v->as_int != 0;
+		else if (!left_v && right_v)
+			shouldExecute = right_v->as_int != 0;
+		
+		match(RPAREN);
+		statement();
+		// removeTmps();
+	} while(shouldExecute);
+
+	shouldExecute = true;
+	return true;
 }
 
 bool assignment_statement()
 {
+	Token* currentToken = lookAheadToken;
+	bool parsable = var() &&
+           match(ASSIGN) &&
+     	      expression() && match(SEMICOLON);
+	if (!shouldExecute)
+	    return parsable;
+
+	lookAheadToken = currentToken;
 	if (var())
 	{
 		if (match(ASSIGN))
@@ -577,6 +681,10 @@ bool assignment_statement()
 
 bool var()
 {
+	if (!shouldExecute)
+		return match(ID) &&
+           var_tail();
+
 	Symbol* symbol = match_declared();
 	if (symbol == nullptr)
 		return false;
@@ -595,13 +703,21 @@ bool var_tail()
 
 bool expression()
 {
+	left_v = nullptr;
+	right_v = nullptr;
 	return additive_expression() && expression_tail();
 }
 
 bool expression_tail()
 {
+	Symbol* sym = lastSymbol;
 	if (isNext(LT) || isNext(GT) || isNext(EQ) || isNext(NEQ))
-		return relop() && additive_expression() && expression_tail();
+	{
+		lastSymbol = nullptr;
+		bool out = relop() && additive_expression() && expression_tail();
+		lastSymbol = sym;
+		return out;
+	}
 	else
 		return true;
 }
@@ -609,13 +725,37 @@ bool expression_tail()
 bool relop()
 {
 	if (isNext(LT))
-		return (match(LT) && relop_tail());
-	else if (isNext(GT))
-		return (match(GT) && relop_tail());
+	{
+		bool out = (match(LT) && relop_tail());
+		if (!out)
+			return false;
+		relationOp = LT;
+		return true;
+	}	
+else if (isNext(GT))
+	{
+		bool out = (match(GT) && relop_tail());
+		if (!out)
+			return false;
+		relationOp = GT;
+		return true;
+	}
 	else if (isNext(EQ))
-		return match(EQ);
+	{
+		bool out = match(EQ);
+		if (!out)
+			return false;
+		relationOp = EQ;
+		return true;
+	}
 	else
-		return match(NEQ);
+	{
+		bool out = match(NEQ);
+		if (!out)
+			return false;
+		relationOp = NEQ;
+		return true;
+	}
 }
 
 bool relop_tail()
@@ -627,7 +767,8 @@ bool relop_tail()
 
 bool additive_expression()
 {
-	return term() && additive_expression_tail();
+	bool parsable = term() && additive_expression_tail();
+	return parsable;
 }
 
 bool additive_expression_tail()
@@ -640,6 +781,11 @@ bool additive_expression_tail()
 
 bool addop()
 {
+	if (!shouldExecute)
+	    if (isNext(PLUS))
+        	return (match(PLUS));
+    	else
+        	return (match(MINUS));
 	if (isNext(PLUS))
 	{
 		if (match(PLUS))
@@ -675,6 +821,14 @@ bool term_tail()
 
 bool mulop()
 {
+	if (!shouldExecute)
+	{
+		if (isNext(MULT))
+			return (match(MULT));
+		else
+			return (match(DIV));
+	}
+
 	if (isNext(MULT))
 	{
 		if (match(MULT))
@@ -698,104 +852,137 @@ bool mulop()
 
 bool factor()
 {
-	// Now we need to start doing something
-	if (isNext(NUM))
+	if (!shouldExecute)
 	{
-		auto numberSym = match_number();
-		if (numberSym == nullptr)
-			return false;
-
-		// std::cout << "TYPES: " << symbolTypes[lastSymbol->type] << ", " << symbolTypes[numberSym->type] << '\n';
-		if (lastSymbol->type != numberSym->type)
-		{
-			std::cout << "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
-			error_line = "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
-			return false;
-		}
-		switch(numberSym->type){
-			case Symbol::FLOAT:
-				if (operation.empty()) lastSymbol->as_float = numberSym->as_float;
-				else if (operation == "+") lastSymbol->as_float += numberSym->as_float;
-				else if (operation == "-") lastSymbol->as_float -= numberSym->as_float;
-				else if (operation == "*") lastSymbol->as_float *= numberSym->as_float;
-				else if (operation == "/") {
-					if (numberSym->as_float == 0)
-					{
-						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
-						exit(10);
-					}
-					lastSymbol->as_float /= numberSym->as_float;
-				}
-			break;
-			case Symbol::INT:
-				if (operation.empty()) lastSymbol->as_int = numberSym->as_int;
-				else if (operation == "+") lastSymbol->as_int += numberSym->as_int;
-				else if (operation == "-") lastSymbol->as_int -= numberSym->as_int;
-				else if (operation == "*") lastSymbol->as_int *= numberSym->as_int;
-				else if (operation == "/") {
-					if (numberSym->as_int == 0)
-					{
-						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
-						exit(10);
-					}
-					lastSymbol->as_int /= numberSym->as_int;
-				}
-			break;
-			default:
-				// error?
-				break;
-		}
-		operation = "";
-		return true;
+		// Just parse
+		if (isNext(NUM))
+			return match(NUM);
+		else if (isNext(ID))
+			return match(ID);
+		else
+			return match(LPAREN) && expression() && match(RPAREN);
 	}
-	else if (isNext(ID))
-	{
-		auto idSymbol = match_declared();
-		if (idSymbol == nullptr)
-			return false;
-
-		if (lastSymbol->type != idSymbol->type)
+	else {
+		// Now we need to start doing something
+		if (isNext(NUM))
 		{
-			std::cout << "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
-			error_line = "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
-			return false;
-		}
-		switch(idSymbol->type){
-			case Symbol::FLOAT:
-				if (operation.empty()) lastSymbol->as_float = idSymbol->as_float;
-				else if (operation == "+") lastSymbol->as_float += idSymbol->as_float;
-				else if (operation == "-") lastSymbol->as_float -= idSymbol->as_float;
-				else if (operation == "*") lastSymbol->as_float *= idSymbol->as_float;
-				else if (operation == "/") {
-					if (idSymbol->as_float == 0.0f)
-					{
-						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
-						exit(10);
+			auto numberSym = match_number();
+			if (numberSym == nullptr)
+				return false;
+
+			if (left_v == nullptr)
+				left_v = numberSym;
+			else if (right_v == nullptr)
+				right_v = numberSym;
+			
+			if (lastSymbol == nullptr)
+			{
+				lastSymbol = numberSym;
+				return true;
+			}
+
+			// std::cout << "TYPES: " << symbolTypes[lastSymbol->type] << ", " << symbolTypes[numberSym->type] << '\n';
+			if (lastSymbol->type != numberSym->type)
+			{
+				std::cout << "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+				error_line = "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+				return false;
+			}
+			switch(numberSym->type){
+				case Symbol::FLOAT:
+					if (operation.empty()) lastSymbol->as_float = numberSym->as_float;
+					else if (operation == "+") lastSymbol->as_float += numberSym->as_float;
+					else if (operation == "-") lastSymbol->as_float -= numberSym->as_float;
+					else if (operation == "*") lastSymbol->as_float *= numberSym->as_float;
+					else if (operation == "/") {
+						if (numberSym->as_float == 0)
+						{
+							std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+							exit(10);
+						}
+						lastSymbol->as_float /= numberSym->as_float;
 					}
-					lastSymbol->as_float /= idSymbol->as_float;
-				}
-			break;
-			case Symbol::INT:
-				if (operation.empty()) lastSymbol->as_int = idSymbol->as_int;
-				else if (operation == "+") lastSymbol->as_int += idSymbol->as_int;
-				else if (operation == "-") lastSymbol->as_int -= idSymbol->as_int;
-				else if (operation == "*") lastSymbol->as_int *= idSymbol->as_int;
-				else if (operation == "/") {
-					if (idSymbol->as_int == 0)
-					{
-						std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
-						exit(10);
-					}
-					lastSymbol->as_int /= idSymbol->as_int;
-				}
-			break;
-			default:
-				// error?
 				break;
+				case Symbol::INT:
+					if (operation.empty()) lastSymbol->as_int = numberSym->as_int;
+					else if (operation == "+") lastSymbol->as_int += numberSym->as_int;
+					else if (operation == "-") lastSymbol->as_int -= numberSym->as_int;
+					else if (operation == "*") lastSymbol->as_int *= numberSym->as_int;
+					else if (operation == "/") {
+						if (numberSym->as_int == 0)
+						{
+							std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+							exit(10);
+						}
+						lastSymbol->as_int /= numberSym->as_int;
+					}
+				break;
+				default:
+					// error?
+					break;
+			}
+			operation = "";
+			return true;
 		}
-		operation = "";
-		return true;
+		else if (isNext(ID))
+		{
+			auto idSymbol = match_declared();
+			if (idSymbol == nullptr)
+				return false;
+
+			if (right_v == nullptr)
+				right_v = idSymbol;
+			else if (left_v == nullptr)
+				left_v = idSymbol;
+			if (lastSymbol == nullptr)
+			{
+				lastSymbol = idSymbol;
+				return true;
+			}
+			
+			if (lastSymbol->type != idSymbol->type)
+			{
+				std::cout << "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+				error_line = "Invalid type!. Expeected: " + (lastSymbol->type == Symbol::INT) ? "int" : "float";
+				return false;
+			}
+			switch(idSymbol->type){
+				case Symbol::FLOAT:
+					if (operation.empty()) lastSymbol->as_float = idSymbol->as_float;
+					else if (operation == "+") lastSymbol->as_float += idSymbol->as_float;
+					else if (operation == "-") lastSymbol->as_float -= idSymbol->as_float;
+					else if (operation == "*") lastSymbol->as_float *= idSymbol->as_float;
+					else if (operation == "/") {
+						if (idSymbol->as_float == 0.0f)
+						{
+							std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+							exit(10);
+						}
+						lastSymbol->as_float /= idSymbol->as_float;
+					}
+				break;
+				case Symbol::INT:
+					if (operation.empty()) lastSymbol->as_int = idSymbol->as_int;
+					else if (operation == "+") lastSymbol->as_int += idSymbol->as_int;
+					else if (operation == "-") lastSymbol->as_int -= idSymbol->as_int;
+					else if (operation == "*") lastSymbol->as_int *= idSymbol->as_int;
+					else if (operation == "/") {
+						if (idSymbol->as_int == 0)
+						{
+							std::cerr << "Division by zero exception! #" << lineNumber << " terminating.\n";
+							exit(10);
+						}
+						lastSymbol->as_int /= idSymbol->as_int;
+					}
+				break;
+				default:
+					// error?
+					break;
+			}
+			operation = "";
+			return true;
+		}
+		else
+			return match(LPAREN) && expression() && match(RPAREN);
 	}
-	else
-		return match(LPAREN) && expression() && match(RPAREN);
 }

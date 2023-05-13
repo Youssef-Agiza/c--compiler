@@ -9,7 +9,7 @@ SOURCE_FILE= parser.cpp
 
 all: buildDir
 	cd $(BUILD_DIR) && flex -C ../$(LEX_FILE)
-	$(CC)  $(BUILD_DIR)/lex.yy.c $(SOURCE_FILE) -o $(BUILD_DIR)/$(OUTPUT_BINARY_NAME)
+	$(CC) -g $(BUILD_DIR)/lex.yy.c $(SOURCE_FILE) -o $(BUILD_DIR)/$(OUTPUT_BINARY_NAME)
 	@echo "\n====Running the parser===\n"
 	$(BUILD_DIR)/$(OUTPUT_BINARY_NAME)  $(INPUT_FILE)
 

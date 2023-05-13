@@ -94,6 +94,9 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 
 To handle syntax error we kept track of all the tokens read and their line number. On encountering an error, the program terminates after printing the token expected, the token found, and the line number at which the error happened.
 
+### Problems in the implementation:
+
+Selection and iterative statements are not executing correctly.
 
 ### Sample run
 ![sample run](sample%20run.png)
