@@ -2,7 +2,8 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <string.h>
-#include<stdarg.h>
+#include <stdarg.h>
+#include "y.tab.h"
 
 #define ANSI_COLOR_RED     "\033[31;1m"
 #define ANSI_COLOR_RESET   "\033[0m"
@@ -60,6 +61,7 @@ void throw_error(const char* msg){
 /* Print with new line */
 void  print_token(const char *format , ...)
 {
+    return;
     // print with new line
     va_list args;
     va_start(args, format);
@@ -88,7 +90,15 @@ void yyerror(char *);
 
 
 /* Keywords */
-keywords (else|if|int|return|void|while|main|float)
+if_keyword "if"
+else_keyword "else"
+int_keyword "int"
+return_keyword "return"
+void_keyword "void"
+while_keyword "while"
+main_keyword "main"
+float_keyword "float"
+
 /*special symbols*/
 PLUS (\+)
 MINUS "-"
@@ -145,28 +155,34 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 %%
 
 
-{keywords}  { print_token(yytext); UPDATE_CHAR_POSITION; }
+{if_keyword} {print_token(yytext); return IF_KEYWORD; UPDATE_CHAR_POSITION;}
+{else_keyword} {print_token(yytext); return ELSE_KEYWORD; UPDATE_CHAR_POSITION;}
+{int_keyword} {print_token(yytext); return INT_KEYWORD; UPDATE_CHAR_POSITION;}
+{return_keyword} {print_token(yytext); return RETURN_KEYWORD; UPDATE_CHAR_POSITION;}
+{void_keyword} {print_token(yytext); return VOID_KEYWORD; UPDATE_CHAR_POSITION;}
+{while_keyword} {print_token(yytext); return WHILE_KEYWORD; UPDATE_CHAR_POSITION;}
+{main_keyword} {print_token(yytext); return MAIN_KEYWORD; UPDATE_CHAR_POSITION;}
+{float_keyword} {print_token(yytext); return FLOAT_KEYWORD; UPDATE_CHAR_POSITION;}
 
-
-{PLUS}          { print_token("PLUS"); UPDATE_CHAR_POSITION;}
-{MINUS}         { print_token("MINUS"); UPDATE_CHAR_POSITION;}
-{ASSIGN}        { print_token("ASSIGN"); UPDATE_CHAR_POSITION;}
-{MULT}          { print_token("MULT"); UPDATE_CHAR_POSITION;}
-{DIV}           { print_token("DIV"); UPDATE_CHAR_POSITION;}
-{LT}            { print_token("LT"); UPDATE_CHAR_POSITION;}
-{LEQ}           { print_token("LEQ"); UPDATE_CHAR_POSITION;}
-{GT}            { print_token("GT"); UPDATE_CHAR_POSITION;}
-{GEQ}           { print_token("GEQ"); UPDATE_CHAR_POSITION;}
-{EQ}            { print_token("EQ"); UPDATE_CHAR_POSITION;}
-{NEQ}           { print_token("NEQ"); UPDATE_CHAR_POSITION;}
-{LBRACKET}      { print_token("LBRACKET"); UPDATE_CHAR_POSITION;}
-{RBRACKET}      { print_token("RBRACKET"); UPDATE_CHAR_POSITION;}
-{LPAREN}        { print_token("LPAREN"); UPDATE_CHAR_POSITION;}
-{RPAREN}        { print_token("RPAREN"); UPDATE_CHAR_POSITION;}
-{LBRACE}        { print_token("LBRACE"); UPDATE_CHAR_POSITION;}
-{RBRACE}        { print_token("RBRACE"); UPDATE_CHAR_POSITION;}
-{SEMICOLON}     { print_token("SEMICOLON"); UPDATE_CHAR_POSITION;}
-{COMMA}         { print_token("COMMA"); UPDATE_CHAR_POSITION;}
+{PLUS}          { print_token("PLUS"); return PLUS; UPDATE_CHAR_POSITION;}
+{MINUS}         { print_token("MINUS"); return MINUS; UPDATE_CHAR_POSITION;}
+{ASSIGN}        { print_token("ASSIGN"); return ASSIGN; UPDATE_CHAR_POSITION;}
+{MULT}          { print_token("MULT"); return MULT; UPDATE_CHAR_POSITION;}
+{DIV}           { print_token("DIV"); return DIV; UPDATE_CHAR_POSITION;}
+{LT}            { print_token("LT"); return LT; UPDATE_CHAR_POSITION;}
+{LEQ}           { print_token("LEQ"); return LEQ; UPDATE_CHAR_POSITION;}
+{GT}            { print_token("GT"); return GT; UPDATE_CHAR_POSITION;}
+{GEQ}           { print_token("GEQ"); return GEQ; UPDATE_CHAR_POSITION;}
+{EQ}            { print_token("EQ"); return EQ; UPDATE_CHAR_POSITION;}
+{NEQ}           { print_token("NEQ"); return NEQ; UPDATE_CHAR_POSITION;}
+{LBRACKET}      { print_token("LBRACKET"); return LBRACKET; UPDATE_CHAR_POSITION;}
+{RBRACKET}      { print_token("RBRACKET"); return RBRACKET; UPDATE_CHAR_POSITION;}
+{LPAREN}        { print_token("LPAREN"); return LPAREN; UPDATE_CHAR_POSITION;}
+{RPAREN}        { print_token("RPAREN"); return RPAREN; UPDATE_CHAR_POSITION;}
+{LBRACE}        { print_token("LBRACE"); return LBRACE; UPDATE_CHAR_POSITION;}
+{RBRACE}        { print_token("RBRACE"); return RBRACE; UPDATE_CHAR_POSITION;}
+{SEMICOLON}     { print_token("SEMICOLON"); return SEMICOLON; UPDATE_CHAR_POSITION;}
+{COMMA}         { print_token("COMMA"); return COMMA; UPDATE_CHAR_POSITION;}
 
 
 \n      { line_number++; char_position = 1;} /* Keep track of line numbers */
@@ -185,8 +201,8 @@ comment "/*"([^\*][^\\]|\n)*?"*/"
 {ws}    {UPDATE_CHAR_POSITION;} /* Keep track of character positions */
 
 
-{ID}             { print_token("ID"); UPDATE_CHAR_POSITION;}
-{num}            { print_token("NUM"); UPDATE_CHAR_POSITION;}
+{ID}             { print_token("ID"); return ID; UPDATE_CHAR_POSITION;}
+{num}            { print_token("NUM"); return NUM; UPDATE_CHAR_POSITION;}
 
 
 {invalid_num} {UPDATE_CHAR_POSITION; print_parsing_error("Invalid number"); }

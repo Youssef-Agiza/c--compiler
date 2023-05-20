@@ -96,9 +96,19 @@ The deleted rules are 6 ,11,14,17,27,28,29.
 
 To handle syntax error we kept track of all the tokens read and their line number. On encountering an error, the program terminates after printing the token expected, the token found, and the line number at which the error happened.
 
-### Problems in the implementation:
+### How to run the project:
 
-Selection and iterative statements are not executing correctly.
+In the make file change the variable `INPUT_FILE` to the file name you want to run.
+
+Run make
+
 
 ### Sample run
-![sample run](sample%20run.png)
+
+With no errors:
+
+![](run2.png)
+
+With errors:
+
+![](run1.png)
