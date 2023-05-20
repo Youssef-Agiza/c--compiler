@@ -2,5 +2,12 @@
     "files.associations": {
         "xstring": "cpp",
         "iostream": "cpp"
-    }
+    },
+    "makefile.launchConfigurations": [
+        {
+            "cwd": "/media/seif-sallam/0EEC783DEC78215F/C--Compiler/Yacc/build",
+            "binaryPath": "/media/seif-sallam/0EEC783DEC78215F/C--Compiler/Yacc/build/yacc.out",
+            "binaryArgs": []
+        }
+    ]
 }
