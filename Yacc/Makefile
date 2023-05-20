@@ -10,7 +10,8 @@ SOURCES = $(BUILD_DIR)/lex.yy.c $(BUILD_DIR)/y.tab.c
 all: buildDir
 	cd $(BUILD_DIR) && yacc -d $(YACC_FILE) && flex $(LEX_FILE)
 	$(CC) -g $(SOURCES) -o $(BUILD_DIR)/$(OUTPUT_BINARY_NAME)
-	$(BUILD_DIR)/$(OUTPUT_BINARY_NAME) < input.c
+	@echo "\n\n"
+	$(BUILD_DIR)/$(OUTPUT_BINARY_NAME) < $(INPUT_FILE)
 
 clean:
 	rm -rf $(BUILD_DIR)
